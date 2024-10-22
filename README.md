@@ -1,3 +1,10 @@
+## How to run the scripts
+You will need Python installed, as well as the following libraries:
+- pip install pandas
+- pip install scipy
+- pip install matplotlib
+- pip install tabulate
+
 ## NOTES ABOUT HOW TO USE SCRIPTS TO PROCESS FILES:
 
 ### Manually check/fix the datalogs
