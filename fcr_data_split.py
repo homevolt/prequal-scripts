@@ -15,6 +15,7 @@ import fcr_sine_stability
 import svk_ler_plot
 from tabulate import tabulate
 import colorama
+import re
 
 log = logging.getLogger('splitter')
 END_TRIM = 15  # Data to cut off at the end of test to avoid overlapping with next [s]
@@ -251,6 +252,14 @@ class ColorLogFormatter(logging.Formatter):
         style = self.styles.get(record.levelno, None)
         return styled(super().format(record), style)
 
+def write_report_to_file(file_name: str, content: str):
+    stripped_content = strip_ansi_codes(content)
+    with open(file_name, 'w', encoding='utf-8') as f:
+        f.write(stripped_content)
+
+def strip_ansi_codes(text: str) -> str:
+    ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
+    return ansi_escape.sub('', text)
 
 def run():
     colorama.init()
@@ -334,26 +343,41 @@ def run():
                                       test_amplitude,
                                       nyquist_file,
                                       frequency_performance_file)
-
+ 
+    report_content = []
+    report_content.append('━' * 120)
+    report_content.append(styled(f'FCR-D test report for {args.system_name}', colorama.Style.BRIGHT))
     print()
     print('━' * 120)
     print(styled(f'FCR-D test report for {args.system_name}', colorama.Style.BRIGHT))
 
     if fcr_d_up_sine_results:
+        report_content.append('')
+        report_content.append('FCR-D-up sine results')
+        report_content.append(get_sine_results_table(fcr_d_up_sine_results))
         print()
         print(styled('FCR-D-up sine results', colorama.Back.BLUE))
         print(get_sine_results_table(fcr_d_up_sine_results))
-
+    
     if fcr_d_down_sine_results:
+        report_content.append('')
+        report_content.append('FCR-D-down sine results')
+        report_content.append(get_sine_results_table(fcr_d_down_sine_results))
         print()
         print(styled('FCR-D-down sine results', colorama.Back.BLUE))
         print(get_sine_results_table(fcr_d_down_sine_results))
-
+    
     for stage, result in ramp_results:
+        report_content.append('')
+        report_content.append(f'{stage.fcr_test_sequence} ramp results')
+        report_content.append(get_ramp_results_table(stage, result))
         print()
         print(styled(f'{stage.fcr_test_sequence} ramp results', colorama.Back.GREEN))
         print(get_ramp_results_table(stage, result))
-
+    
+    report_file_name = f'{args.system_name}_test_report.txt'
+    write_report_to_file(report_file_name, '\n'.join(report_content))
+    log.info(f'Written test report to {report_file_name}')
 
 if __name__ == '__main__':
     run()
